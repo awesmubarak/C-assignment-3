@@ -1,13 +1,64 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
+
+struct Int_Sequence {
+    /*
+     * This structure holds the integer sequence representing the output.
+     *
+     * width: the width of the output image
+     * height: the height of the output image
+     * total_g_codes: the numbeer of greycodes represented by the image
+     * sequence: the sequence itself
+    */
+    int width;
+    int height;
+    int total_g_codes;
+    int sequence[10000]; //arbitary
+};
+
+char *get_input() {
+    /*
+     * This function will accept the user input.
+     *
+     * [[NOTE, usually this would be in a header file]]
+     *
+     * returns: string containg the sanitised input
+     */
+
+    /* Setup a dynamically allocated string for the input. This allows us to
+     * return a pointer to the memory location, and avoids having to copy the
+     * string around.
+     */
+    int max_len = 1001; // arbitary
+    static char *buffer;
+    buffer = (char *)malloc(max_len);
+
+    fprintf(stderr, "RLE: "); /* Prompt for user, printed to stderr */
+
+    /* Truncate input by only accepting specified number of chars, and throwing
+     * away the rest of stdin
+     */
+    fgets(buffer, max_len, stdin);
+    buffer[strcspn(buffer, "\n")] = 0; /* Truncates buffer at newlines */
+    fflush(stdin); /* If stdin > max_len, discard the rest of stdin */
+
+    return buffer;
+}
 
 
-char greycode_char(int g_codes, int current_code) {
+char greycode_char(int total_g_codes, int current_code) {
+    /*
+     * This function will return the correct character for a given greycode.
+     *
+     * total_g_codes: total number of greycodes as specified by user
+     * current_code: the code for which the char should be returned
+     *
+     * returns: char, equivilant to the given greycode
+     */
     char current_run_char;
 
-    switch (g_codes) {
+    switch (total_g_codes) {
     case 2:
         switch (current_code) {
         case 0:
@@ -26,10 +77,10 @@ char greycode_char(int g_codes, int current_code) {
             current_run_char = '#';
             break;
         case 1:
-            current_run_char = ' ';
+            current_run_char = '.';
             break;
         case 2:
-            current_run_char = '.';
+            current_run_char = ' ';
             break;
         }
         return current_run_char;
@@ -56,37 +107,53 @@ char greycode_char(int g_codes, int current_code) {
     return current_run_char;
 }
 
-const char *get_input(int max_len) {
-    static char *buffer;
-    buffer = (char *)malloc(max_len + 1);
-
-    fgets(buffer, max_len, stdin);
-    buffer[strcspn(buffer, "\n")] = 0;
-    fflush(stdin);
-
-    return buffer;
+void print_image(struct Int_Sequence int_sequence) {
+    /*
+     * Will print the image, given the sequence of characters. The newlines are
+     * taken care of here too.
+     *
+     * int_sequence: a int_sequence struct containg the code's information
+     * output_sequence: a sequence of integers corresponding to greycodes
+          representing the output
+    */
+    int i;
+    for (i = 1; i <= (int_sequence.width * int_sequence.height); i++) {
+        printf("%c", greycode_char(int_sequence.total_g_codes, int_sequence.sequence[i - 1]));
+        if (!(i % (int_sequence.width))) {
+            printf("\n");
+        }
+    }
 }
 
-int main(int argc, char const *argv[]) {
-    int width = -1, height = -1, g_levels = -1, code_or_run = 0, count = 0, number, i;
+struct Int_Sequence convert_to_sequence(char *input_run) {
+    /*
+     * This function will convert the input string into an integer sequence,
+     * and also store all other required parameters.
+     *
+     * input_run: the input string entered by the user
+     *
+     * returns: struct Int_Sequence, reepresents the input from the user
+    */
+    int code_or_run = 0, count = 0, number, i;
     char *token;
-    char run[] = "39 26 2 1 89 0 14 1 22 0 21 1 16 0 26 1 13 0 6 1 3 0 7 1 3 0 7 1 13 0 6 1 3 0 7 1 3 0 7 1 13 0 12 1 1 0 12 1 16 0 9 1 3 0 9 1 23 0 12 1 23 0 3 1 14 0 3 1 20 0 18 1 26 0 6 1 21 0 4 1 25 0 4 1 5 0 6 1 22 0 7 1 8 0 5 1 16 0 5 1 16 0 5 1 10 0 5 1 22 0 5 1 4 0 5 1 28 0 8 1 31 0 8 1 28 0 5 1 4 0 5 1 21 0 6 1 10 0 6 1 11 0 9 1 16 0 8 1 8 0 5 1 20 0 5 1 83";
-    int final_sequence[10000], current_number;
-    int larger_sequence[19999];
 
-    token = strtok(run, " ");
+    struct Int_Sequence int_sequence = {-1, -1, -1};
+
+    int current_number;
+
+    token = strtok(input_run, " ");
     while (token != NULL) {
         sscanf(token, "%d", &number);
-        if (width == -1) {
-            width = number;
-        } else if (height == -1) {
-            height = number;
-        } else if (g_levels == -1) {
-            g_levels = number;
+        if (int_sequence.width == -1) {
+            int_sequence.width = number;
+        } else if (int_sequence.height == -1) {
+            int_sequence.height = number;
+        } else if (int_sequence.total_g_codes == -1) {
+            int_sequence.total_g_codes = number;
         } else {
             if (code_or_run) {
                 for (i = 0; i < number; i++) {
-                    final_sequence[count] = current_number;
+                    int_sequence.sequence[count] = current_number;
                     count += 1;
                 }
                 code_or_run = 0;
@@ -97,49 +164,67 @@ int main(int argc, char const *argv[]) {
         }
         token = strtok(NULL, " ");
     }
+    return int_sequence;
+}
 
-
-    for (i = 0; i < (width * height); i++) {
-        if (final_sequence[i] == 1) {
-            final_sequence[i] = 3;
+struct Int_Sequence convert_total_g_code_1_to_4(struct Int_Sequence int_sequence) {
+    /*
+     * Will convert a sequence coded for an output of greeycode level 1 to level
+     * 4.
+     *
+     * int_sequence: an int sequence
+     *
+     * returns: converted int sequence
+    */
+    int i;
+    for (i = 0; i < (int_sequence.width * int_sequence.height); i++) {
+        if (int_sequence.sequence[i] == 1) {
+            int_sequence.sequence[i] = 3;
         }
     }
+    return int_sequence;
+}
 
+struct Int_Sequence expand_seq(struct Int_Sequence int_sequence) {
+    int i, a, b, c, d;
     int v_addition = 0, h_addition = 0;
     int original_count = 0;
     double result;
     int horizontal_count = 0;
 
-    int a, b, c, d;
+    struct Int_Sequence expanded_seq;
 
-    for (i = 0; i < ((((2 * width) - 1) * ((2 * height) - 1))); i++) {
+    expanded_seq.width = (2 * int_sequence.width) - 1;
+    expanded_seq.height = (2 * int_sequence.height) - 1;
+
+    for (i = 0; i < (expanded_seq.width * expanded_seq.height); i++) {
         if (!h_addition && !v_addition) {
-            larger_sequence[i] = final_sequence[original_count];
+            expanded_seq.sequence[i] = int_sequence.sequence[original_count];
 
             original_count += 1;
         } else if (!h_addition && v_addition) {
-            larger_sequence[i] = (final_sequence[original_count] + final_sequence[original_count - 1]) / 2;
+            expanded_seq.sequence[i] = (int_sequence.sequence[original_count] + int_sequence.sequence[original_count - 1]) / 2;
         } else if (h_addition && !v_addition) {
             horizontal_count++;
-            larger_sequence[i] = (final_sequence[horizontal_count] + final_sequence[horizontal_count - width]) / 2;
+            expanded_seq.sequence[i] = (int_sequence.sequence[horizontal_count] + int_sequence.sequence[horizontal_count - int_sequence.width]) / 2;
         } else {
-            b = final_sequence[horizontal_count];
-            a = final_sequence[horizontal_count - width];
-            c = final_sequence[horizontal_count + 1 - width];
-            d = final_sequence[horizontal_count + 1];
+            b = int_sequence.sequence[horizontal_count];
+            a = int_sequence.sequence[horizontal_count - int_sequence.width];
+            c = int_sequence.sequence[horizontal_count + 1 - int_sequence.width];
+            d = int_sequence.sequence[horizontal_count + 1];
 
 
             result = (double)(a + b + c + d) / 4;
-            printf("%f\n",result );
+            printf("%f\n", result);
 
-            // larger_sequence[i] = ceil(result);
-            larger_sequence[i] = result;
-            printf("%i\n",larger_sequence[i] );
+            // expanded_seq[i] = ceil(result);
+            expanded_seq.sequence[i] = result;
+            printf("%i\n", expanded_seq.sequence[i]);
 
 
-            // larger_sequence[i] = (final_sequence[horizontal_count] + final_sequence[horizontal_count - width]) / 2;
+            // expanded_seq[i] = (final_sequence[horizontal_count] + final_sequence[horizontal_count - width]) / 2;
 
-            // larger_sequence[i] = 5;
+            // expanded_seq[i] = 5;
         }
 
         // flip the horries
@@ -158,24 +243,27 @@ int main(int argc, char const *argv[]) {
             v_addition = 0;
         }
     }
+    return expanded_seq;
+}
 
+int main() {
+    /*
+     * This function acts like a gateway, connecting all the other required
+     * functions togehter. First it will get the input as a string, next it will
+     * pass this input to be converted into an int array, and finally it will
+    */
+    char *input_run;
+    struct Int_Sequence int_sequence;
+    struct Int_Sequence expanded_seq;
 
+    input_run = get_input();
+    int_sequence = convert_to_sequence(input_run);
 
-    for (i = 0; i < (width * height); i++) {
-        printf("%c", greycode_char(4, final_sequence[i]));
-        if (!(i % width)) {
-            printf("\n");
-        }
-    }
+    int_sequence = convert_total_g_code_1_to_4(int_sequence);
+    expanded_seq = expand_seq(int_sequence);
 
+    print_image(int_sequence);
+    print_image(expanded_seq);
 
-    printf("\n");
-
-    for (i = 0; i < (((2 * width) - 1) * ((2 * height) - 1)); i++) {
-        printf("%c", greycode_char(4, larger_sequence[i]));
-        if (!(i % 78)) {
-            printf("\n");
-        }
-    }
     return 0;
 }
