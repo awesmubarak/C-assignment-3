@@ -2,10 +2,63 @@
 #include <string.h>
 #include <stdlib.h>
 
-char greycode_char(int g_codes, int current_code) {
+struct Int_Sequence {
+    /*
+     * This structure holds the integer sequence representing the output.
+     *
+     * width: the width of the output image
+     * height: the height of the output image
+     * total_g_codes: the numbeer of greycodes represented by the image
+     * sequence: the sequence itself
+    */
+    int width;
+    int height;
+    int total_g_codes;
+    int sequence[10000]; //arbitary
+};
+
+char *get_input() {
+    /*
+     * This function will accept the user input.
+     *
+     * [[NOTE, usually this would be in a header file]]
+     *
+     * returns: string containg the sanitised input
+     */
+
+    /* Setup a dynamically allocated string for the input. This allows us to
+     * return a pointer to the memory location, and avoids having to copy the
+     * string around.
+     */
+    int max_len = 1001; // arbitary
+    static char *buffer;
+    buffer = (char *)malloc(max_len);
+
+    fprintf(stderr, "RLE: "); /* Prompt for user, printed to stderr */
+
+    /* Truncate input by only accepting specified number of chars, and throwing
+     * away the rest of stdin
+     */
+    fgets(buffer, max_len, stdin);
+    buffer[strcspn(buffer, "\n")] = 0; /* Truncates buffer at newlines */
+    fflush(stdin); /* If stdin > max_len, discard the rest of stdin */
+
+    return buffer;
+}
+
+
+char greycode_char(int total_g_codes, int current_code) {
+    /*
+     * This function will return the correct character for a given greycode.
+     *
+     * total_g_codes: total number of greycodes as specified by user
+     * current_code: the code for which the char should be returned
+     *
+     * returns: char, equivilant to the given greycode
+     */
     char current_run_char;
 
-    switch (g_codes) {
+    switch (total_g_codes) {
     case 2:
         switch (current_code) {
         case 0:
@@ -54,38 +107,78 @@ char greycode_char(int g_codes, int current_code) {
     return current_run_char;
 }
 
-const char *get_input(int max_len) {
-    static char *buffer;
-    buffer = (char *)malloc(max_len + 1);
+void print_image(struct Int_Sequence int_sequence) {
+    /*
+     * Will print the image, given the sequence of characters. The newlines are
+     * taken care of here too.
+     *
+     * int_sequence: a int_sequence struct containg the code's information
+     * output_sequence: a sequence of integers corresponding to greycodes
+          representing the output
+    */
+    int i, p1, p2, p3, p4, gh, gv, gp, gn, max_g_l, max_g_d, max_g;
 
-    fgets(buffer, max_len, stdin);
-    buffer[strcspn(buffer, "\n")] = 0;
-    fflush(stdin);
+    // TODO: convert this into a seperate function
 
-    return buffer;
+    for (i = 1; i <= (int_sequence.width * int_sequence.height); i++) {
+        if (!(i % int_sequence.width) || (i > (int_sequence.width * (int_sequence.height - 1)))) {
+            if (!(i % int_sequence.width)){
+                printf("\n");
+            }
+        } else {
+            /* Get the value of each pixel of the image */
+            p1 = int_sequence.sequence[i];
+            p2 = int_sequence.sequence[i + 1];
+            p3 = int_sequence.sequence[i + int_sequence.width];
+            p4 = int_sequence.sequence[i + int_sequence.width + 1];
+
+            /* Calculate each directional gradient */
+            gh = abs((p1 - p2 + p3 - p4) / 2);
+            gv = abs((p1 - p3 + p2 - p4) / 2);
+            gp = abs(p1 - p4);
+            gn = abs(p2 - p3);
+
+            /* Figure out which is the largest gradient */
+            max_g_l = gh > gv ? gh : gv;
+            max_g_d = gp > gn ? gp : gn;
+            max_g =  max_g_l > max_g_d ? max_g_l : max_g_d;
+
+            printf("%c", greycode_char(int_sequence.total_g_codes, max_g));
+
+        }
+    }
+
 }
 
-int main(int argc, char const *argv[]) {
-    int width = -1, height = -1, g_levels = -1, code_or_run = 0, count = 0, number, i;
+struct Int_Sequence convert_to_sequence(char *input_run) {
+    /*
+     * This function will convert the input string into an integer sequence,
+     * and also store all other required parameters.
+     *
+     * input_run: the input string entered by the user
+     *
+     * returns: struct Int_Sequence, reepresents the input from the user
+    */
+    int code_or_run = 0, count = 0, number, i;
     char *token;
-    char run[] = "69 31 4 1 227 3 2 0 1 3 2 0 3 3 3 0 3 3 2 1 50 3 1 0 3 3 3 0 4 3 4 0 5 3 2 1 44 3 2 0 3 3 4 0 5 3 5 0 5 3 3 1 41 3 2 0 3 3 4 0 6 3 6 0 5 3 3 1 39 3 2 0 4 3 4 0 6 3 6 0 6 3 3 1 37 3 2 0 4 3 5 0 6 3 7 0 6 3 3 1 7 2 7 1 22 3 2 0 4 3 5 0 6 3 7 0 6 3 3 1 5 2 17 1 14 3 2 0 4 3 5 0 6 3 7 0 6 3 3 1 5 2 17 1 15 3 2 0 3 3 6 0 5 3 7 0 5 3 3 1 4 2 20 1 14 3 2 0 3 3 6 0 5 3 6 0 6 3 3 1 5 2 19 1 15 3 2 0 3 3 5 0 5 3 6 0 5 3 3 1 9 2 14 1 18 3 2 0 4 3 4 0 4 3 5 0 5 3 3 1 43 3 2 0 4 3 3 0 3 3 5 0 5 3 3 1 46 3 2 0 3 3 2 0 3 3 4 0 4 3 2 1 51 3 1 0 3 3 2 0 2 3 3 0 3 3 2 1 55 3 1 0 2 3 1 0 2 3 2 0 3 3 1 1 45 2 14 3 1 0 1 3 1 0 1 3 1 0 2 3 1 1 45 2 16 0 1 2 2 0 1 1 3 0 1 1 45 2 16 0 1 2 2 0 1 1 3 0 1 1 47 2 13 0 10 1 44 2 16 0 8 1 48 2 13 0 8 1 51 2 13 1 107 2 5 1 58 2 11 1 57 2 12 1 55 2 14 1 53 2 16";
-    int final_sequence[10000], current_number;
-    int gh, gv, gp, gn, max_g_l, max_g_d, max_g, p1, p2, p3, p4;
 
+    struct Int_Sequence int_sequence = {-1, -1, -1};
 
-    token = strtok(run, " ");
+    int current_number;
+
+    token = strtok(input_run, " ");
     while (token != NULL) {
         sscanf(token, "%d", &number);
-        if (width == -1) {
-            width = number;
-        } else if (height == -1) {
-            height = number;
-        } else if (g_levels == -1) {
-            g_levels = number;
+        if (int_sequence.width == -1) {
+            int_sequence.width = number;
+        } else if (int_sequence.height == -1) {
+            int_sequence.height = number;
+        } else if (int_sequence.total_g_codes == -1) {
+            int_sequence.total_g_codes = number;
         } else {
             if (code_or_run) {
                 for (i = 0; i < number; i++) {
-                    final_sequence[count] = current_number;
+                    int_sequence.sequence[count] = current_number;
                     count += 1;
                 }
                 code_or_run = 0;
@@ -96,40 +189,21 @@ int main(int argc, char const *argv[]) {
         }
         token = strtok(NULL, " ");
     }
+    return int_sequence;
+}
 
+int main() {
+    /*
+     * This function acts like a gateway, connecting all the other required
+     * functions togehter. First it will get the input as a string, next it will
+     * pass this input to be converted into an int array, and finally it will
+    */
+    char *input_run;
+    struct Int_Sequence int_sequence;
 
-    for (i = 0; i < (width * height); i++) {
-        if (!(i % width) || (i > (width * (height - 1)))) {
-            if (!(i % width)){
-                printf("\n");
-            }
-        } else {
-            p1 = final_sequence[i];
-            p2 = final_sequence[i + 1];
-            p3 = final_sequence[i + width];
-            p4 = final_sequence[i + width + 1];
+    input_run = get_input();
+    int_sequence = convert_to_sequence(input_run);
+    print_image(int_sequence);
 
-            gh = abs((p1 - p2 + p3 - p4) / 2);
-            gv = abs((p1 - p3 + p2 - p4) / 2);
-            gp = abs(p1 - p4);
-            gn = abs(p2 - p3);
-
-            max_g_l = gh > gv ? gh : gv;
-            max_g_d = gp > gn ? gp : gn;
-            max_g =  max_g_l > max_g_d ? max_g_l : max_g_d;
-            printf("%c", greycode_char(g_levels, max_g));
-
-        }
-    }
-
-
-
-
-    // for (i = 0; i < (width * height); i++) {
-    //     printf("%c", greycode_char(g_levels, final_sequence[i]));
-    //     if (!(i % width)) {
-    //         printf("\n");
-    //     }
-    // }
     return 0;
 }
