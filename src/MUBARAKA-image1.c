@@ -2,15 +2,26 @@
 #include <string.h>
 #include <stdlib.h>
 
+struct Int_Sequence {
+    /*
+     * This structure holds the integer sequence representing the output.
+     *
+     * width: the width of the output image
+     * height: the height of the output image
+     * total_g_codes: the numbeer of greycodes represented by the image
+     * sequence: the sequence itself
+    */
+    int width;
+    int height;
+    int total_g_codes;
+    int sequence[10000]; //arbitary
+};
+
 char *get_input() {
     /*
-     * This is a helper function to take user input. It will remove newlines,
-     * truncate to the given length, and prevent buffer overflows.
+     * This function will accept the user input.
      *
      * [[NOTE, usually this would be in a header file]]
-     *
-     * prompt: string that will be printed to stderr to prompt the user
-     * max_len: int describing the maximu length of the input
      *
      * returns: string containg the sanitised input
      */
@@ -19,11 +30,11 @@ char *get_input() {
      * return a pointer to the memory location, and avoids having to copy the
      * string around.
      */
-    int max_len = 1000;
+    int max_len = 1001; // arbitary
     static char *buffer;
-    buffer = (char *)malloc(max_len + 1); /* Compensate for new line */
+    buffer = (char *)malloc(max_len);
 
-    fprintf(stderr, "RLE: ");
+    fprintf(stderr, "RLE: "); /* Prompt for user, printed to stderr */
 
     /* Truncate input by only accepting specified number of chars, and throwing
      * away the rest of stdin
@@ -36,10 +47,18 @@ char *get_input() {
 }
 
 
-char greycode_char(int g_codes, int current_code) {
+char greycode_char(int total_g_codes, int current_code) {
+    /*
+     * This function will return the correct character for a given greycode.
+     *
+     * total_g_codes: total number of greycodes as specified by user
+     * current_code: the code for which the char should be returned
+     *
+     * returns: char, equivilant to the given greycode
+     */
     char current_run_char;
 
-    switch (g_codes) {
+    switch (total_g_codes) {
     case 2:
         switch (current_code) {
         case 0:
@@ -88,25 +107,53 @@ char greycode_char(int g_codes, int current_code) {
     return current_run_char;
 }
 
-int main(int argc, char const *argv[]) {
-    int width = -1, height = -1, g_levels = -1, code_or_run = 0, count = 0, number, i;
+void print_image(struct Int_Sequence int_sequence) {
+    /*
+     * Will print the image, given the sequence of characters. The newlines are
+     * taken care of here too.
+     *
+     * int_sequence: a int_sequence struct containg the code's information
+     * output_sequence: a sequence of integers corresponding to greycodes
+          representing the output
+    */
+    int i;
+    for (i = 1; i <= (int_sequence.width * int_sequence.height); i++) {
+        printf("%c", greycode_char(int_sequence.total_g_codes, int_sequence.sequence[i - 1]));
+        if (!(i % (int_sequence.width))) {
+            printf("\n");
+        }
+    }
+}
+
+struct Int_Sequence convert_to_sequence(char *input_run) {
+    /*
+     * This function will convert the input string into an integer sequence,
+     * and also store all other required parameters.
+     *
+     * input_run: the input string entered by the user
+     *
+     * returns: struct Int_Sequence, reepresents the input from the user
+    */
+    int code_or_run = 0, count = 0, number, i;
     char *token;
-    // char run[] = "78 26 3 1 364 0 4 1 7 0 3 1 43 2 7 1 12 0 7 1 4 0 6 1 33 2 28 0 2 2 2 0 2 1 5 0 1 2 2 0 1 1 31 2 27 0 6 2 14 1 28 2 28 0 7 2 5 0 4 2 4 0 2 2 1 1 26 2 29 0 7 2 4 0 4 2 6 0 2 2 1 1 27 2 26 0 9 2 15 1 29 2 25 0 9 2 9 0 4 2 1 1 29 2 27 0 9 2 12 1 28 0 5 2 24 0 11 2 4 0 3 1 30 0 11 2 19 0 12 2 2 0 8 1 25 0 17 2 15 0 10 2 1 0 17 1 17 0 21 1 13 0 9 1 3 0 14 1 17 0 11 1 2 0 8 1 15 0 9 1 10 0 4 1 19 0 9 1 4 0 7 1 18 0 9 1 31 0 8 1 5 0 6 1 21 0 9 1 28 0 8 1 6 0 5 1 25 0 7 1 28 0 7 1 5 0 8 1 24 0 3 1 333";
-    char *run = get_input();
-    int final_sequence[10000], current_number;
-    token = strtok(run, " ");
+
+    struct Int_Sequence int_sequence = {-1, -1, -1};
+
+    int current_number;
+
+    token = strtok(input_run, " ");
     while (token != NULL) {
         sscanf(token, "%d", &number);
-        if (width == -1) {
-            width = number;
-        } else if (height == -1) {
-            height = number;
-        } else if (g_levels == -1) {
-            g_levels = number;
+        if (int_sequence.width == -1) {
+            int_sequence.width = number;
+        } else if (int_sequence.height == -1) {
+            int_sequence.height = number;
+        } else if (int_sequence.total_g_codes == -1) {
+            int_sequence.total_g_codes = number;
         } else {
             if (code_or_run) {
                 for (i = 0; i < number; i++) {
-                    final_sequence[count] = current_number;
+                    int_sequence.sequence[count] = current_number;
                     count += 1;
                 }
                 code_or_run = 0;
@@ -117,13 +164,21 @@ int main(int argc, char const *argv[]) {
         }
         token = strtok(NULL, " ");
     }
+    return int_sequence;
+}
 
+int main() {
+    /*
+     * This function acts like a gateway, connecting all the other required
+     * functions togehter. First it will get the input as a string, next it will
+     * pass this input to be converted into an int array, and finally it will
+    */
+    char *input_run;
+    struct Int_Sequence int_sequence;
 
-    for (i = 0; i < (width * height); i++) {
-        printf("%c", greycode_char(g_levels, final_sequence[i]));
-        if (!(i % width)) {
-            printf("\n");
-        }
-    }
+    input_run = get_input();
+    int_sequence = convert_to_sequence(input_run);
+    print_image(int_sequence);
+
     return 0;
 }
