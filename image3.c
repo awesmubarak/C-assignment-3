@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
+
 
 char greycode_char(int g_codes, int current_code) {
     char current_run_char;
@@ -36,16 +38,16 @@ char greycode_char(int g_codes, int current_code) {
     case 4:
         switch (current_code) {
         case 0:
-            current_run_char = ' ';
+            current_run_char = '#';
             break;
         case 1:
-            current_run_char = '.';
-            break;
-        case 2:
             current_run_char = ':';
             break;
+        case 2:
+            current_run_char = '.';
+            break;
         case 3:
-            current_run_char = '#';
+            current_run_char = ' ';
             break;
         }
 
@@ -96,25 +98,48 @@ int main(int argc, char const *argv[]) {
         token = strtok(NULL, " ");
     }
 
+
+    for (i = 0; i < (width * height); i++) {
+        if (final_sequence[i] == 1) {
+            final_sequence[i] = 3;
+        }
+    }
+
     int v_addition = 0, h_addition = 0;
     int original_count = 0;
+    double result;
+    int horizontal_count = 0;
+
+    int a, b, c, d;
 
     for (i = 0; i < ((((2 * width) - 1) * ((2 * height) - 1))); i++) {
         if (!h_addition && !v_addition) {
             larger_sequence[i] = final_sequence[original_count];
 
-            printf("%c", greycode_char(g_levels, final_sequence[original_count]));
-            printf("%c", final_sequence[original_count]);
             original_count += 1;
-            if (!(original_count % 39)) {
-                printf("\n");
-            }
-            // } else if (h_addition && !v_addition) {
-            /* code */
-        // } else if (!h_addition && v_addition) {
-        //     larger_sequence[i] = (final_sequence[original_count-1]+final_sequence[original_count+1])/2;
+        } else if (!h_addition && v_addition) {
+            larger_sequence[i] = (final_sequence[original_count] + final_sequence[original_count - 1]) / 2;
+        } else if (h_addition && !v_addition) {
+            horizontal_count++;
+            larger_sequence[i] = (final_sequence[horizontal_count] + final_sequence[horizontal_count - width]) / 2;
         } else {
-            larger_sequence[i] = 1;
+            b = final_sequence[horizontal_count];
+            a = final_sequence[horizontal_count - width];
+            c = final_sequence[horizontal_count + 1 - width];
+            d = final_sequence[horizontal_count + 1];
+
+
+            result = (double)(a + b + c + d) / 4;
+            printf("%f\n",result );
+
+            // larger_sequence[i] = ceil(result);
+            larger_sequence[i] = result;
+            printf("%i\n",larger_sequence[i] );
+
+
+            // larger_sequence[i] = (final_sequence[horizontal_count] + final_sequence[horizontal_count - width]) / 2;
+
+            // larger_sequence[i] = 5;
         }
 
         // flip the horries
@@ -135,8 +160,9 @@ int main(int argc, char const *argv[]) {
     }
 
 
+
     for (i = 0; i < (width * height); i++) {
-        printf("%c", greycode_char(g_levels, final_sequence[i]));
+        printf("%c", greycode_char(4, final_sequence[i]));
         if (!(i % width)) {
             printf("\n");
         }
@@ -146,7 +172,7 @@ int main(int argc, char const *argv[]) {
     printf("\n");
 
     for (i = 0; i < (((2 * width) - 1) * ((2 * height) - 1)); i++) {
-        printf("%c", greycode_char(2, larger_sequence[i]));
+        printf("%c", greycode_char(4, larger_sequence[i]));
         if (!(i % 78)) {
             printf("\n");
         }
