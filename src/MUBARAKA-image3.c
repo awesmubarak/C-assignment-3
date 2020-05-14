@@ -107,19 +107,19 @@ char greycode_char(int total_g_codes, int current_code) {
     return current_run_char;
 }
 
-void print_image(struct Int_Sequence int_sequence) {
+void print_image(struct Int_Sequence int_seq) {
     /*
      * Will print the image, given the sequence of characters. The newlines are
      * taken care of here too.
      *
-     * int_sequence: a int_sequence struct containg the code's information
+     * int_seq: a int_seq struct containg the code's information
      * output_sequence: a sequence of integers corresponding to greycodes
           representing the output
     */
     int i;
-    for (i = 1; i <= (int_sequence.width * int_sequence.height); i++) {
-        printf("%c", greycode_char(int_sequence.total_g_codes, int_sequence.sequence[i - 1]));
-        if (!(i % (int_sequence.width))) {
+    for (i = 1; i <= (int_seq.width * int_seq.height); i++) {
+        printf("%c", greycode_char(int_seq.total_g_codes, int_seq.sequence[i - 1]));
+        if (!(i % (int_seq.width))) {
             printf("\n");
         }
     }
@@ -137,23 +137,23 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
     int code_or_run = 0, count = 0, number, i;
     char *token;
 
-    struct Int_Sequence int_sequence = {-1, -1, -1};
+    struct Int_Sequence int_seq = {-1, -1, -1};
 
     int current_number;
 
     token = strtok(input_run, " ");
     while (token != NULL) {
         sscanf(token, "%d", &number);
-        if (int_sequence.width == -1) {
-            int_sequence.width = number;
-        } else if (int_sequence.height == -1) {
-            int_sequence.height = number;
-        } else if (int_sequence.total_g_codes == -1) {
-            int_sequence.total_g_codes = number;
+        if (int_seq.width == -1) { // stop -1 from being a magic number
+            int_seq.width = number;
+        } else if (int_seq.height == -1) {
+            int_seq.height = number;
+        } else if (int_seq.total_g_codes == -1) {
+            int_seq.total_g_codes = number;
         } else {
             if (code_or_run) {
                 for (i = 0; i < number; i++) {
-                    int_sequence.sequence[count] = current_number;
+                    int_seq.sequence[count] = current_number;
                     count += 1;
                 }
                 code_or_run = 0;
@@ -164,84 +164,72 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
         }
         token = strtok(NULL, " ");
     }
-    return int_sequence;
+    return int_seq;
 }
 
-struct Int_Sequence convert_total_g_code_1_to_4(struct Int_Sequence int_sequence) {
+struct Int_Sequence convert_total_g_code_1_to_4(struct Int_Sequence int_seq) {
     /*
-     * Will convert a sequence coded for an output of greeycode level 1 to level
+     * Will convert a sequence coded for an output of greycode level 1 to level
      * 4.
      *
-     * int_sequence: an int sequence
+     * int_seq: an int sequence
      *
      * returns: converted int sequence
     */
     int i;
-    for (i = 0; i < (int_sequence.width * int_sequence.height); i++) {
-        if (int_sequence.sequence[i] == 1) {
-            int_sequence.sequence[i] = 3;
+    int_seq.total_g_codes = 4;
+    for (i = 0; i < (int_seq.width * int_seq.height); i++) {
+        if (int_seq.sequence[i] == 1) {
+            int_seq.sequence[i] = 3;
         }
     }
-    return int_sequence;
+    return int_seq;
 }
 
-struct Int_Sequence expand_seq(struct Int_Sequence int_sequence) {
+struct Int_Sequence expand_seq(struct Int_Sequence int_seq) {
+    /*
+     * Will expand a sequence.
+    */
     int i, a, b, c, d;
-    int v_addition = 0, h_addition = 0;
-    int original_count = 0;
-    double result;
-    int horizontal_count = 0;
+    int v_addition = 0, h_addition = 0, original_count = 0, horizontal_count = 0;
 
     struct Int_Sequence expanded_seq;
+    expanded_seq.total_g_codes = int_seq.total_g_codes;
 
-    expanded_seq.width = (2 * int_sequence.width) - 1;
-    expanded_seq.height = (2 * int_sequence.height) - 1;
+    expanded_seq.width = (2 * int_seq.width) - 1;
+    expanded_seq.height = (2 * int_seq.height) - 1;
 
-    for (i = 0; i < (expanded_seq.width * expanded_seq.height); i++) {
+    for (i = 1; i <= (expanded_seq.width * expanded_seq.height); i++) {
         if (!h_addition && !v_addition) {
-            expanded_seq.sequence[i] = int_sequence.sequence[original_count];
+            expanded_seq.sequence[i - 1] = int_seq.sequence[original_count];
 
             original_count += 1;
         } else if (!h_addition && v_addition) {
-            expanded_seq.sequence[i] = (int_sequence.sequence[original_count] + int_sequence.sequence[original_count - 1]) / 2;
+            a = int_seq.sequence[original_count];
+            b = int_seq.sequence[original_count - 1];
+            expanded_seq.sequence[i - 1] = (a + b) / 2;
         } else if (h_addition && !v_addition) {
+            a = int_seq.sequence[horizontal_count];
+            b = int_seq.sequence[horizontal_count + int_seq.width];
+            expanded_seq.sequence[i - 1] = (a + b) / 2;
             horizontal_count++;
-            expanded_seq.sequence[i] = (int_sequence.sequence[horizontal_count] + int_sequence.sequence[horizontal_count - int_sequence.width]) / 2;
         } else {
-            b = int_sequence.sequence[horizontal_count];
-            a = int_sequence.sequence[horizontal_count - int_sequence.width];
-            c = int_sequence.sequence[horizontal_count + 1 - int_sequence.width];
-            d = int_sequence.sequence[horizontal_count + 1];
+            a = int_seq.sequence[horizontal_count];
+            b = int_seq.sequence[horizontal_count - 1];
+            c = int_seq.sequence[horizontal_count + int_seq.width];
+            d = int_seq.sequence[horizontal_count + int_seq.width - 1];
 
-
-            result = (double)(a + b + c + d) / 4;
-            printf("%f\n", result);
-
-            // expanded_seq[i] = ceil(result);
-            expanded_seq.sequence[i] = result;
-            printf("%i\n", expanded_seq.sequence[i]);
-
-
-            // expanded_seq[i] = (final_sequence[horizontal_count] + final_sequence[horizontal_count - width]) / 2;
-
-            // expanded_seq[i] = 5;
+            expanded_seq.sequence[i - 1] = (a + b + c + d) / 4;
         }
 
-        // flip the horries
-        if (!(i % 78)) {
-            if (h_addition == 0) {
-                h_addition = 1;
-            } else {
-                h_addition = 0;
-            }
+        // flip the horiztonals
+        if (!(i % (expanded_seq.width))) {
+            h_addition = h_addition == 1 ? 0 : 1;
+            v_addition = 1;
         }
 
         // flip the verties
-        if (v_addition == 0) {
-            v_addition = 1;
-        } else {
-            v_addition = 0;
-        }
+        v_addition = v_addition == 1 ? 0 : 1;
     }
     return expanded_seq;
 }
@@ -253,16 +241,16 @@ int main() {
      * pass this input to be converted into an int array, and finally it will
     */
     char *input_run;
-    struct Int_Sequence int_sequence;
+    struct Int_Sequence int_seq;
     struct Int_Sequence expanded_seq;
 
     input_run = get_input();
-    int_sequence = convert_to_sequence(input_run);
+    int_seq = convert_to_sequence(input_run);
 
-    int_sequence = convert_total_g_code_1_to_4(int_sequence);
-    expanded_seq = expand_seq(int_sequence);
+    int_seq = convert_total_g_code_1_to_4(int_seq);
+    expanded_seq = expand_seq(int_seq);
 
-    print_image(int_sequence);
+    print_image(int_seq);
     print_image(expanded_seq);
 
     return 0;

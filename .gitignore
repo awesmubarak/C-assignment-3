@@ -1,5 +1,6 @@
 *.out
 tmp
+.atom-build.yml
 
 # Prerequisites
 *.d

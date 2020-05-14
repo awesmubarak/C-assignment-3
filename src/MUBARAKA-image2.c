@@ -122,7 +122,7 @@ void print_image(struct Int_Sequence int_sequence) {
 
     for (i = 1; i <= (int_sequence.width * int_sequence.height); i++) {
         if (!(i % int_sequence.width) || (i > (int_sequence.width * (int_sequence.height - 1)))) {
-            if (!(i % int_sequence.width)){
+            if (!(i % int_sequence.width)) {
                 printf("\n");
             }
         } else {
@@ -141,13 +141,11 @@ void print_image(struct Int_Sequence int_sequence) {
             /* Figure out which is the largest gradient */
             max_g_l = gh > gv ? gh : gv;
             max_g_d = gp > gn ? gp : gn;
-            max_g =  max_g_l > max_g_d ? max_g_l : max_g_d;
+            max_g = max_g_l > max_g_d ? max_g_l : max_g_d;
 
             printf("%c", greycode_char(int_sequence.total_g_codes, max_g));
-
         }
     }
-
 }
 
 struct Int_Sequence convert_to_sequence(char *input_run) {
