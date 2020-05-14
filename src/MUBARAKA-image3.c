@@ -222,16 +222,64 @@ struct Int_Sequence expand_seq(struct Int_Sequence int_seq) {
             expanded_seq.sequence[i - 1] = (a + b + c + d) / 4;
         }
 
-        // flip the horiztonals
+        // flip the horizontals
         if (!(i % (expanded_seq.width))) {
             h_addition = h_addition == 1 ? 0 : 1;
             v_addition = 1;
         }
 
-        // flip the verties
+        // flip the verticals
         v_addition = v_addition == 1 ? 0 : 1;
     }
     return expanded_seq;
+}
+
+struct Int_Sequence smooth_image(struct Int_Sequence rough_seq) {
+    int i, l_top, l_left, l_right, l_bottom, limit, total_value;
+    struct Int_Sequence smooth_seq;
+
+    smooth_seq.height = rough_seq.height;
+    smooth_seq.width = rough_seq.width;
+    smooth_seq.total_g_codes = rough_seq.total_g_codes;
+
+    for (i = 0; i < (rough_seq.width * rough_seq.height); i++) {
+        /* Check if the cell is at the edges of the image */
+        l_top = i < rough_seq.width;
+        l_left = !(i % rough_seq.width);
+        l_right = !((i + 1) % rough_seq.width);
+        l_bottom = i > rough_seq.width * (rough_seq.height - 1);
+        limit = l_top || l_left || l_right || l_bottom;
+
+        if (!limit) {
+            total_value = rough_seq.sequence[i - rough_seq.width - 1];
+            total_value += 2 * rough_seq.sequence[i - rough_seq.width];
+            total_value += rough_seq.sequence[i - rough_seq.width + 1];
+            total_value += 2 * rough_seq.sequence[i - 1];
+            total_value += 4 * rough_seq.sequence[i];
+            total_value += 2 * rough_seq.sequence[i+ 1];
+            total_value += rough_seq.sequence[i + rough_seq.width - 1];
+            total_value += 2 * rough_seq.sequence[i + rough_seq.width];
+            total_value += rough_seq.sequence[i + rough_seq.width + 1];
+            total_value += 7;
+
+            smooth_seq.sequence[i] = total_value / 16;
+        } else {
+            smooth_seq.sequence[i] = rough_seq.sequence[i];
+        }
+        total_value = 0;
+    }
+
+    return smooth_seq;
+}
+
+struct Int_Sequence smooth_image_caller(struct Int_Sequence rough_seq) {
+    struct Int_Sequence smooth_seq_1, smooth_seq_2, smooth_seq_3;
+
+    smooth_seq_1 = smooth_image(rough_seq);
+    smooth_seq_2 = smooth_image(smooth_seq_1);
+    smooth_seq_3 = smooth_image(smooth_seq_2);
+
+    return smooth_seq_3;
 }
 
 int main() {
@@ -243,15 +291,18 @@ int main() {
     char *input_run;
     struct Int_Sequence int_seq;
     struct Int_Sequence expanded_seq;
+    struct Int_Sequence smooth_seq;
 
     input_run = get_input();
     int_seq = convert_to_sequence(input_run);
 
     int_seq = convert_total_g_code_1_to_4(int_seq);
     expanded_seq = expand_seq(int_seq);
+    smooth_seq = smooth_image_caller(expanded_seq);
 
     print_image(int_seq);
     print_image(expanded_seq);
+    print_image(smooth_seq);
 
     return 0;
 }
