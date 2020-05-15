@@ -272,20 +272,31 @@ struct Int_Sequence smooth_image(struct Int_Sequence rough_seq) {
     return smooth_seq;
 }
 
-struct Int_Sequence smooth_image_caller(struct Int_Sequence rough_seq) {
-    struct Int_Sequence smooth_seq_1, smooth_seq_2, smooth_seq_3;
+struct Int_Sequence smooth_image_caller(struct Int_Sequence rough_seq, int n_its) {
+    /*
+     * This function will call the smooth_image() function n times, as specified
+     * in the specification. The function is recursive, and can be called with
+     * any n number of iterations.
+     *
+     * rough_seq: the sequence that is to be smoothed
+     * n_its: number of iterations to carry out
+     *
+     * returns: the smooth sequence
+     */
+    struct Int_Sequence smooth_seq;
 
-    smooth_seq_1 = smooth_image(rough_seq);
-    smooth_seq_2 = smooth_image(smooth_seq_1);
-    smooth_seq_3 = smooth_image(smooth_seq_2);
+    if (n_its != 1){
+        rough_seq = smooth_image_caller(rough_seq, n_its - 1);
+    }
+    smooth_seq = smooth_image(rough_seq);
 
-    return smooth_seq_3;
+    return smooth_seq;
 }
 
 int main() {
     /*
      * This function acts like a gateway, connecting all the other required
-     * functions togehter. First it will get the input as a string, next it will
+     * functions together. First it will get the input as a string, next it will
      * pass this input to be converted into an int array, and finally it will
     */
     char *input_run;
@@ -298,7 +309,7 @@ int main() {
 
     int_seq = convert_total_g_code_1_to_4(int_seq);
     expanded_seq = expand_seq(int_seq);
-    smooth_seq = smooth_image_caller(expanded_seq);
+    smooth_seq = smooth_image_caller(expanded_seq, 3);
 
     print_image(int_seq);
     print_image(expanded_seq);
