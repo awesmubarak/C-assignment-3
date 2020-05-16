@@ -2,9 +2,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define  MAX_RLE_LEN 10000
+
 struct Int_Sequence {
     /*
      * This structure holds the integer sequence representing the output.
+     *
+     * [[NOTE, usually this would be in a header file]]
      *
      * width: the width of the output image
      * height: the height of the output image
@@ -14,7 +18,7 @@ struct Int_Sequence {
     int width;
     int height;
     int total_g_codes;
-    int sequence[10000]; //arbitary
+    int sequence[MAX_RLE_LEN];
 };
 
 char *get_input() {
@@ -30,26 +34,26 @@ char *get_input() {
      * return a pointer to the memory location, and avoids having to copy the
      * string around.
      */
-    int max_len = 1001; // arbitary
     static char *buffer;
-    buffer = (char *)malloc(max_len);
+    buffer = (char *)malloc(MAX_RLE_LEN);
 
     fprintf(stderr, "RLE: "); /* Prompt for user, printed to stderr */
 
     /* Truncate input by only accepting specified number of chars, and throwing
      * away the rest of stdin
      */
-    fgets(buffer, max_len, stdin);
+    fgets(buffer, MAX_RLE_LEN, stdin);
     buffer[strcspn(buffer, "\n")] = 0; /* Truncates buffer at newlines */
-    fflush(stdin); /* If stdin > max_len, discard the rest of stdin */
+    fflush(stdin); /* If stdin > MAX_RLE_LEN, discard the rest of stdin */
 
     return buffer;
 }
 
-
 char greycode_char(int total_g_codes, int current_code) {
     /*
      * This function will return the correct character for a given greycode.
+     *
+     * [[NOTE, usually this would be in a header file]]
      *
      * total_g_codes: total number of greycodes as specified by user
      * current_code: the code for which the char should be returned
@@ -112,6 +116,8 @@ void print_image(struct Int_Sequence int_seq) {
      * Will print the image, given the sequence of characters. The newlines are
      * taken care of here too.
      *
+     * [[NOTE, usually this would be in a header file]]
+     *
      * int_seq: a int_seq struct containg the code's information
      * output_sequence: a sequence of integers corresponding to greycodes
           representing the output
@@ -130,6 +136,8 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
      * This function will convert the input string into an integer sequence,
      * and also store all other required parameters.
      *
+     * [[NOTE, usually this would be in a header file]]
+     *
      * input_run: the input string entered by the user
      *
      * returns: struct Int_Sequence, reepresents the input from the user
@@ -137,14 +145,14 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
     int code_or_run = 0, count = 0, number, i;
     char *token;
 
-    struct Int_Sequence int_seq = {-1, -1, -1};
+    struct Int_Sequence int_seq = {-1, -1, -1, {0}};
 
     int current_number;
 
     token = strtok(input_run, " ");
     while (token != NULL) {
         sscanf(token, "%d", &number);
-        if (int_seq.width == -1) { // stop -1 from being a magic number
+        if (int_seq.width == -1) {
             int_seq.width = number;
         } else if (int_seq.height == -1) {
             int_seq.height = number;
@@ -167,7 +175,7 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
     return int_seq;
 }
 
-struct Int_Sequence convert_total_g_code_1_to_4(struct Int_Sequence int_seq) {
+struct Int_Sequence convert_g_levels(struct Int_Sequence int_seq, int new_level) {
     /*
      * Will convert a sequence coded for an output of greycode level 1 to level
      * 4.
@@ -177,10 +185,10 @@ struct Int_Sequence convert_total_g_code_1_to_4(struct Int_Sequence int_seq) {
      * returns: converted int sequence
     */
     int i;
-    int_seq.total_g_codes = 4;
+    int_seq.total_g_codes = new_level;
     for (i = 0; i < (int_seq.width * int_seq.height); i++) {
         if (int_seq.sequence[i] == 1) {
-            int_seq.sequence[i] = 3;
+            int_seq.sequence[i] = new_level - 1;
         }
     }
     return int_seq;
@@ -188,49 +196,58 @@ struct Int_Sequence convert_total_g_code_1_to_4(struct Int_Sequence int_seq) {
 
 struct Int_Sequence expand_seq(struct Int_Sequence int_seq) {
     /*
-     * Will expand a sequence.
+     * Will expand a sequence. The sequence will be enlarged by a factor of 2.
+     * Where original characters are not added, averages of the surrounding
+     * cells are found.
+     *
+     * int_seq: an integer sequence struct to be expanded
+     *
+     * returns: the expanded sequence
     */
-    int i, a, b, c, d;
-    int v_addition = 0, h_addition = 0, original_count = 0, horizontal_count = 0;
-
+    int i, a, b, c, d, v_add = 0, h_add = 0, original_count = 0, h_count = 0;
     struct Int_Sequence expanded_seq;
-    expanded_seq.total_g_codes = int_seq.total_g_codes;
 
+    expanded_seq.total_g_codes = int_seq.total_g_codes;
     expanded_seq.width = (2 * int_seq.width) - 1;
     expanded_seq.height = (2 * int_seq.height) - 1;
 
     for (i = 1; i <= (expanded_seq.width * expanded_seq.height); i++) {
-        if (!h_addition && !v_addition) {
+        /* Here we decided what value should be added to the current node.
+           this is either the original char, or a new char based on the
+           orignals */
+        if (!h_add && !v_add) {
+            /* Original */
             expanded_seq.sequence[i - 1] = int_seq.sequence[original_count];
-
             original_count += 1;
-        } else if (!h_addition && v_addition) {
+        } else if (!h_add && v_add) {
+            /* Horizontal addition */
             a = int_seq.sequence[original_count];
             b = int_seq.sequence[original_count - 1];
             expanded_seq.sequence[i - 1] = (a + b) / 2;
-        } else if (h_addition && !v_addition) {
-            a = int_seq.sequence[horizontal_count];
-            b = int_seq.sequence[horizontal_count + int_seq.width];
+        } else if (h_add && !v_add) {
+            /* Vertical addition */
+            a = int_seq.sequence[h_count];
+            b = int_seq.sequence[h_count + int_seq.width];
             expanded_seq.sequence[i - 1] = (a + b) / 2;
-            horizontal_count++;
+            h_count++;
         } else {
-            a = int_seq.sequence[horizontal_count];
-            b = int_seq.sequence[horizontal_count - 1];
-            c = int_seq.sequence[horizontal_count + int_seq.width];
-            d = int_seq.sequence[horizontal_count + int_seq.width - 1];
-
+            /* Horizontal and vertical addition */
+            a = int_seq.sequence[h_count];
+            b = int_seq.sequence[h_count - 1];
+            c = int_seq.sequence[h_count + int_seq.width];
+            d = int_seq.sequence[h_count + int_seq.width - 1];
             expanded_seq.sequence[i - 1] = (a + b + c + d) / 4;
         }
 
-        // flip the horizontals
+        /* Flip the indicators for what sort of addition is happening */
         if (!(i % (expanded_seq.width))) {
-            h_addition = h_addition == 1 ? 0 : 1;
-            v_addition = 1;
+            h_add = h_add == 1 ? 0 : 1;
+            v_add = 1;
         }
+        v_add = v_add == 1 ? 0 : 1;
 
-        // flip the verticals
-        v_addition = v_addition == 1 ? 0 : 1;
     }
+
     return expanded_seq;
 }
 
@@ -251,12 +268,13 @@ struct Int_Sequence smooth_image(struct Int_Sequence rough_seq) {
         limit = l_top || l_left || l_right || l_bottom;
 
         if (!limit) {
+            /* Based on the spec. Ugly but gets the job done */
             total_value = rough_seq.sequence[i - rough_seq.width - 1];
             total_value += 2 * rough_seq.sequence[i - rough_seq.width];
             total_value += rough_seq.sequence[i - rough_seq.width + 1];
             total_value += 2 * rough_seq.sequence[i - 1];
             total_value += 4 * rough_seq.sequence[i];
-            total_value += 2 * rough_seq.sequence[i+ 1];
+            total_value += 2 * rough_seq.sequence[i + 1];
             total_value += rough_seq.sequence[i + rough_seq.width - 1];
             total_value += 2 * rough_seq.sequence[i + rough_seq.width];
             total_value += rough_seq.sequence[i + rough_seq.width + 1];
@@ -264,6 +282,7 @@ struct Int_Sequence smooth_image(struct Int_Sequence rough_seq) {
 
             smooth_seq.sequence[i] = total_value / 16;
         } else {
+            /* If at limit just add the original back in */
             smooth_seq.sequence[i] = rough_seq.sequence[i];
         }
         total_value = 0;
@@ -285,7 +304,7 @@ struct Int_Sequence smooth_image_caller(struct Int_Sequence rough_seq, int n_its
      */
     struct Int_Sequence smooth_seq;
 
-    if (n_its != 1){
+    if (n_its != 1) {
         rough_seq = smooth_image_caller(rough_seq, n_its - 1);
     }
     smooth_seq = smooth_image(rough_seq);
@@ -297,7 +316,8 @@ int main() {
     /*
      * This function acts like a gateway, connecting all the other required
      * functions together. First it will get the input as a string, next it will
-     * pass this input to be converted into an int array, and finally it will
+     * pass this input to be converted into an int array, then it will expand
+     * the sequence and then smooth it before finally printing the sequence.
     */
     char *input_run;
     struct Int_Sequence int_seq;
@@ -307,12 +327,10 @@ int main() {
     input_run = get_input();
     int_seq = convert_to_sequence(input_run);
 
-    int_seq = convert_total_g_code_1_to_4(int_seq);
+    int_seq = convert_g_levels(int_seq, 4);
     expanded_seq = expand_seq(int_seq);
     smooth_seq = smooth_image_caller(expanded_seq, 3);
 
-    print_image(int_seq);
-    print_image(expanded_seq);
     print_image(smooth_seq);
 
     return 0;

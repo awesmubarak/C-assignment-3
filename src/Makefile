@@ -1,6 +1,6 @@
 CC = gcc
 
-CFLAGS = -ansi -Wall
+CFLAGS = -ansi -pedantic -Wall -Wextra
 OBJECTS = $(SOURCES:.c=.o)
 
 default:
