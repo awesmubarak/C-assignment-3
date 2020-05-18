@@ -4,7 +4,7 @@
 
 #define  MAX_RLE_LEN 10000
 
-struct Int_Sequence {
+struct IntSequence {
     /*
      * This structure holds the integer sequence representing the output.
      *
@@ -111,7 +111,7 @@ char greycode_char(int total_g_codes, int current_code) {
     return current_run_char;
 }
 
-void print_image(struct Int_Sequence int_sequence) {
+void print_image(struct IntSequence int_sequence) {
     /*
      * Will print the image, given the sequence of characters. The newlines are
      * taken care of here too.
@@ -131,7 +131,7 @@ void print_image(struct Int_Sequence int_sequence) {
     }
 }
 
-struct Int_Sequence convert_to_sequence(char *input_run) {
+struct IntSequence convert_to_sequence(char *input_run) {
     /*
      * This function will convert the input string into an integer sequence,
      * and also store all other required parameters.
@@ -140,12 +140,12 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
      *
      * input_run: the input string entered by the user
      *
-     * returns: struct Int_Sequence, reepresents the input from the user
+     * returns: struct IntSequence, reepresents the input from the user
     */
     int code_or_run = 0, count = 0, number, i;
     char *token;
 
-    struct Int_Sequence int_sequence = {-1, -1, -1, {0}};
+    struct IntSequence int_sequence = {-1, -1, -1, {0}};
 
     int current_number;
 
@@ -175,7 +175,7 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
     return int_sequence;
 }
 
-struct Int_Sequence convert_to_gradient(struct Int_Sequence int_seq) {
+struct IntSequence convert_to_gradient(struct IntSequence int_seq) {
     /*
      * This function will convert a given int sequence into a sequence of its
      * gradients. The graidents are calculated in clusers of 4. The new sequence
@@ -183,9 +183,9 @@ struct Int_Sequence convert_to_gradient(struct Int_Sequence int_seq) {
      *
      * int_seq: the integer sequence for which a gradient sequence is desired
      *
-     * returns : Int_Sequence, representing the gradient
+     * returns : IntSequence, representing the gradient
     */
-    struct Int_Sequence grad_seq;
+    struct IntSequence grad_seq;
     int i, p1, p2, p3, p4, gh, gv, gp, gn, max_g_l, max_g_d, max_g, h_l, v_l, p = 0;
 
     grad_seq.width = int_seq.width - 1;
@@ -231,8 +231,8 @@ int main() {
      * the int_seq into a gradient sequence, and finally print it.
     */
     char *input_run;
-    struct Int_Sequence int_sequence;
-    struct Int_Sequence grad_seq;
+    struct IntSequence int_sequence;
+    struct IntSequence grad_seq;
 
     input_run = get_input();
     int_sequence = convert_to_sequence(input_run);

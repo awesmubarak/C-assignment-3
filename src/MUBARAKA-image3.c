@@ -4,7 +4,7 @@
 
 #define  MAX_RLE_LEN 10000
 
-struct Int_Sequence {
+struct IntSequence {
     /*
      * This structure holds the integer sequence representing the output.
      *
@@ -111,7 +111,7 @@ char greycode_char(int total_g_codes, int current_code) {
     return current_run_char;
 }
 
-void print_image(struct Int_Sequence int_seq) {
+void print_image(struct IntSequence int_seq) {
     /*
      * Will print the image, given the sequence of characters. The newlines are
      * taken care of here too.
@@ -131,7 +131,7 @@ void print_image(struct Int_Sequence int_seq) {
     }
 }
 
-struct Int_Sequence convert_to_sequence(char *input_run) {
+struct IntSequence convert_to_sequence(char *input_run) {
     /*
      * This function will convert the input string into an integer sequence,
      * and also store all other required parameters.
@@ -140,12 +140,12 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
      *
      * input_run: the input string entered by the user
      *
-     * returns: struct Int_Sequence, reepresents the input from the user
+     * returns: struct IntSequence, reepresents the input from the user
     */
     int code_or_run = 0, count = 0, number, i;
     char *token;
 
-    struct Int_Sequence int_seq = {-1, -1, -1, {0}};
+    struct IntSequence int_seq = {-1, -1, -1, {0}};
 
     int current_number;
 
@@ -175,7 +175,7 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
     return int_seq;
 }
 
-struct Int_Sequence convert_g_levels(struct Int_Sequence int_seq, int new_level) {
+struct IntSequence convert_g_levels(struct IntSequence int_seq, int new_level) {
     /*
      * Will convert a sequence coded for an output of greycode level 1 to level
      * 4.
@@ -194,7 +194,7 @@ struct Int_Sequence convert_g_levels(struct Int_Sequence int_seq, int new_level)
     return int_seq;
 }
 
-struct Int_Sequence expand_seq(struct Int_Sequence int_seq) {
+struct IntSequence expand_seq(struct IntSequence int_seq) {
     /*
      * Will expand a sequence. The sequence will be enlarged by a factor of 2.
      * Where original characters are not added, averages of the surrounding
@@ -205,7 +205,7 @@ struct Int_Sequence expand_seq(struct Int_Sequence int_seq) {
      * returns: the expanded sequence
     */
     int i, a, b, c, d, v_add = 0, h_add = 0, original_count = 0, h_count = 0;
-    struct Int_Sequence expanded_seq;
+    struct IntSequence expanded_seq;
 
     expanded_seq.total_g_codes = int_seq.total_g_codes;
     expanded_seq.width = (2 * int_seq.width) - 1;
@@ -251,9 +251,9 @@ struct Int_Sequence expand_seq(struct Int_Sequence int_seq) {
     return expanded_seq;
 }
 
-struct Int_Sequence smooth_image(struct Int_Sequence rough_seq) {
+struct IntSequence smooth_image(struct IntSequence rough_seq) {
     int i, l_top, l_left, l_right, l_bottom, limit, total_value;
-    struct Int_Sequence smooth_seq;
+    struct IntSequence smooth_seq;
 
     smooth_seq.height = rough_seq.height;
     smooth_seq.width = rough_seq.width;
@@ -291,7 +291,7 @@ struct Int_Sequence smooth_image(struct Int_Sequence rough_seq) {
     return smooth_seq;
 }
 
-struct Int_Sequence smooth_image_caller(struct Int_Sequence rough_seq, int n_its) {
+struct IntSequence smooth_image_caller(struct IntSequence rough_seq, int n_its) {
     /*
      * This function will call the smooth_image() function n times, as specified
      * in the specification. The function is recursive, and can be called with
@@ -302,7 +302,7 @@ struct Int_Sequence smooth_image_caller(struct Int_Sequence rough_seq, int n_its
      *
      * returns: the smooth sequence
      */
-    struct Int_Sequence smooth_seq;
+    struct IntSequence smooth_seq;
 
     if (n_its != 1) {
         rough_seq = smooth_image_caller(rough_seq, n_its - 1);
@@ -320,9 +320,9 @@ int main() {
      * the sequence and then smooth it before finally printing the sequence.
     */
     char *input_run;
-    struct Int_Sequence int_seq;
-    struct Int_Sequence expanded_seq;
-    struct Int_Sequence smooth_seq;
+    struct IntSequence int_seq;
+    struct IntSequence expanded_seq;
+    struct IntSequence smooth_seq;
 
     input_run = get_input();
     int_seq = convert_to_sequence(input_run);

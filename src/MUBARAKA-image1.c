@@ -4,7 +4,7 @@
 
 #define  MAX_RLE_LEN 10000
 
-struct Int_Sequence {
+struct IntSequence {
     /*
      * This structure holds the integer sequence representing the output.
      *
@@ -111,7 +111,7 @@ char greycode_char(int total_g_codes, int current_code) {
     return current_run_char;
 }
 
-void print_image(struct Int_Sequence int_sequence) {
+void print_image(struct IntSequence int_sequence) {
     /*
      * Will print the image, given the sequence of characters. The newlines are
      * taken care of here too.
@@ -131,7 +131,7 @@ void print_image(struct Int_Sequence int_sequence) {
     }
 }
 
-struct Int_Sequence convert_to_sequence(char *input_run) {
+struct IntSequence convert_to_sequence(char *input_run) {
     /*
      * This function will convert the input string into an integer sequence,
      * and also store all other required parameters.
@@ -140,13 +140,13 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
      *
      * input_run: the input string entered by the user
      *
-     * returns: struct Int_Sequence, reepresents the input from the user
+     * returns: struct IntSequence, reepresents the input from the user
     */
     const int non_init = -1;
     int code_or_run = 0, count = 0, number, i;
     char *token;
 
-    struct Int_Sequence int_sequence = {non_init, non_init, non_init, {0}};
+    struct IntSequence int_sequence = {non_init, non_init, non_init, {0}};
 
     int current_number;
 
@@ -187,7 +187,7 @@ int main() {
      * print the int_seq.
     */
     char *input_run;
-    struct Int_Sequence int_sequence;
+    struct IntSequence int_sequence;
 
     input_run = get_input();
     int_sequence = convert_to_sequence(input_run);
