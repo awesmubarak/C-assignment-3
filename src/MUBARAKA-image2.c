@@ -176,17 +176,26 @@ struct Int_Sequence convert_to_sequence(char *input_run) {
 }
 
 struct Int_Sequence convert_to_gradient(struct Int_Sequence int_seq) {
+    /*
+     * This function will convert a given int sequence into a sequence of its
+     * gradients. The graidents are calculated in clusers of 4. The new sequence
+     * is then returned.
+     *
+     * int_seq: the integer sequence for which a gradient sequence is desired
+     *
+     * returns : Int_Sequence, representing the gradient
+    */
     struct Int_Sequence grad_seq;
-    int i, p1, p2, p3, p4, gh, gv, gp, gn, max_g_l, max_g_d, max_g, h_l, v_l;
+    int i, p1, p2, p3, p4, gh, gv, gp, gn, max_g_l, max_g_d, max_g, h_l, v_l, p = 0;
 
-    grad_seq.width = int_seq.width;
-    grad_seq.height = int_seq.height;
+    grad_seq.width = int_seq.width - 1;
+    grad_seq.height = int_seq.height - 1;
     grad_seq.total_g_codes = int_seq.total_g_codes;
 
-    for (i = 1; i <= (int_seq.width * int_seq.height); i++) {
-        v_l = !(i % int_seq.width);
+    for (i = 0; i <= (int_seq.width * int_seq.height); i++) {
+        v_l = !((i + 1) % int_seq.width);
         h_l = i > (int_seq.width * (int_seq.height - 1));
-        if (!v_l && !h_l) {
+        if (!(v_l || h_l)) {
             /* Get the value of each pixel of the image */
             p1 = int_seq.sequence[i];
             p2 = int_seq.sequence[i + 1];
@@ -204,7 +213,10 @@ struct Int_Sequence convert_to_gradient(struct Int_Sequence int_seq) {
             max_g_d = gp > gn ? gp : gn;
             max_g = max_g_l > max_g_d ? max_g_l : max_g_d;
 
-            grad_seq.sequence[i] = max_g;
+            grad_seq.sequence[p] = max_g;
+            p++;
+        } else {
+            grad_seq.sequence[p] = 42;
         }
     }
 
