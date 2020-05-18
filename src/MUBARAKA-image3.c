@@ -236,7 +236,7 @@ struct IntSequence expand_seq(struct IntSequence int_seq) {
             b = int_seq.sequence[h_count - 1];
             c = int_seq.sequence[h_count + int_seq.width];
             d = int_seq.sequence[h_count + int_seq.width - 1];
-            expanded_seq.sequence[i - 1] = (a + b + c + d) / 4;
+            expanded_seq.sequence[i - 1] = (a + b + c + d + 1) / 4;
         }
 
         /* Flip the indicators for what sort of addition is happening */
