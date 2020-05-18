@@ -111,21 +111,21 @@ char greycode_char(int total_g_codes, int current_code) {
     return current_run_char;
 }
 
-void print_image(struct IntSequence int_sequence) {
+void print_image(struct IntSequence int_seq) {
     /*
      * Will print the image, given the sequence of characters. The newlines are
      * taken care of here too.
      *
      * [[NOTE, usually this would be in a header file]]
      *
-     * int_sequence: a int_sequence struct containg the code's information
+     * int_seq: a int_seq struct containg the code's information
      * output_sequence: a sequence of integers corresponding to greycodes
           representing the output
     */
     int i;
-    for (i = 1; i <= (int_sequence.width * int_sequence.height); i++) {
-        printf("%c", greycode_char(int_sequence.total_g_codes, int_sequence.sequence[i - 1]));
-        if (!(i % (int_sequence.width))) {
+    for (i = 1; i <= (int_seq.width * int_seq.height); i++) {
+        printf("%c", greycode_char(int_seq.total_g_codes, int_seq.sequence[i - 1]));
+        if (!(i % (int_seq.width))) {
             printf("\n");
         }
     }
@@ -145,23 +145,23 @@ struct IntSequence convert_to_sequence(char *input_run) {
     int code_or_run = 0, count = 0, number, i;
     char *token;
 
-    struct IntSequence int_sequence = {-1, -1, -1, {0}};
+    struct IntSequence int_seq = {-1, -1, -1, {0}};
 
     int current_number;
 
     token = strtok(input_run, " ");
     while (token != NULL) {
         sscanf(token, "%d", &number);
-        if (int_sequence.width == -1) {
-            int_sequence.width = number;
-        } else if (int_sequence.height == -1) {
-            int_sequence.height = number;
-        } else if (int_sequence.total_g_codes == -1) {
-            int_sequence.total_g_codes = number;
+        if (int_seq.width == -1) {
+            int_seq.width = number;
+        } else if (int_seq.height == -1) {
+            int_seq.height = number;
+        } else if (int_seq.total_g_codes == -1) {
+            int_seq.total_g_codes = number;
         } else {
             if (code_or_run) {
                 for (i = 0; i < number; i++) {
-                    int_sequence.sequence[count] = current_number;
+                    int_seq.sequence[count] = current_number;
                     count += 1;
                 }
                 code_or_run = 0;
@@ -172,7 +172,7 @@ struct IntSequence convert_to_sequence(char *input_run) {
         }
         token = strtok(NULL, " ");
     }
-    return int_sequence;
+    return int_seq;
 }
 
 struct IntSequence convert_to_gradient(struct IntSequence int_seq) {
@@ -231,12 +231,12 @@ int main() {
      * the int_seq into a gradient sequence, and finally print it.
     */
     char *input_run;
-    struct IntSequence int_sequence;
+    struct IntSequence int_seq;
     struct IntSequence grad_seq;
 
     input_run = get_input();
-    int_sequence = convert_to_sequence(input_run);
-    grad_seq = convert_to_gradient(int_sequence);
+    int_seq = convert_to_sequence(input_run);
+    grad_seq = convert_to_gradient(int_seq);
     print_image(grad_seq);
 
     return 0;

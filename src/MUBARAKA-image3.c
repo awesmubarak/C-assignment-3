@@ -252,6 +252,16 @@ struct IntSequence expand_seq(struct IntSequence int_seq) {
 }
 
 struct IntSequence smooth_image(struct IntSequence rough_seq) {
+    /*
+     * This function will, given a rouch sequence, smooth the sequence out. It
+     * will ignore the edges of the images, but within the image it will take an
+     * average of the pixel values around each pixel and add this to the
+     * corresponding place in a new array.
+     *
+     * rough_seq: a rough IntSequence to be smoothed out
+     *
+     * returns: IntSequence, with the pixels smoothed out
+    */
     int i, l_top, l_left, l_right, l_bottom, limit, total_value;
     struct IntSequence smooth_seq;
 
@@ -291,7 +301,7 @@ struct IntSequence smooth_image(struct IntSequence rough_seq) {
     return smooth_seq;
 }
 
-struct IntSequence smooth_image_caller(struct IntSequence rough_seq, int n_its) {
+struct IntSequence call_smooth_image(struct IntSequence rough_seq, int n_its) {
     /*
      * This function will call the smooth_image() function n times, as specified
      * in the specification. The function is recursive, and can be called with
@@ -305,7 +315,7 @@ struct IntSequence smooth_image_caller(struct IntSequence rough_seq, int n_its) 
     struct IntSequence smooth_seq;
 
     if (n_its != 1) {
-        rough_seq = smooth_image_caller(rough_seq, n_its - 1);
+        rough_seq = call_smooth_image(rough_seq, n_its - 1);
     }
     smooth_seq = smooth_image(rough_seq);
 
@@ -329,7 +339,7 @@ int main() {
 
     int_seq = convert_g_levels(int_seq, 4);
     expanded_seq = expand_seq(int_seq);
-    smooth_seq = smooth_image_caller(expanded_seq, 3);
+    smooth_seq = call_smooth_image(expanded_seq, 3);
 
     print_image(smooth_seq);
 
